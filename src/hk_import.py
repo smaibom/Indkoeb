@@ -1,11 +1,8 @@
 
 
-from unicodedata import category
-
-import pandas as pd
 from import_class import Import_Class
-from import_files import import_excel_sheet,export_excel
-from constants import HK,COLUMN_NAMES
+from import_files import import_excel_sheet
+
 
 
 class HK_Import(Import_Class):
@@ -15,6 +12,7 @@ class HK_Import(Import_Class):
             return 'Øko'
         elif value == 'N':
             return 'Konv'
+        return '-'
 
 
     def import_data(self,filename):
@@ -41,7 +39,7 @@ class HK_Import(Import_Class):
                 category = self.get_category(id)
                 raw_goods = self.get_raw_goods(id)
                 conv_or_eco = self.get_type(line[6])
-                variant = line[3]
+                variant = " ".join(line[3].split())
                 total_price = self.get_total_price(line)
                 units = self.get_unit_amount(line)
                 price_per_unit = total_price/units
@@ -49,14 +47,10 @@ class HK_Import(Import_Class):
                 price_per_kg = total_price/amount_kg
                 origin_country = line[7]
                 row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-                       variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,line[2],None,None,None,None,None,None,None]
+                       variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
                 rows.append(row)
             except ValueError:
                 pass
         return rows
 
 
-hk = HK_Import(HK)
-data = hk.import_data('Specialisterne\\Hørkram.xlsx')
-res = pd.DataFrame(data,columns = COLUMN_NAMES)
-export_excel(res,'test.xlsx')

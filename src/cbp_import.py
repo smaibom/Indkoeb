@@ -1,12 +1,7 @@
 
-import pandas as pd
 from import_files import import_excel_sheet
 from import_class import Import_Class
 import re
-
-from constants import CBP
-from constants import COLUMN_NAMES
-from import_files import export_excel
 
 
 class CBP_Import(Import_Class):
@@ -36,7 +31,7 @@ class CBP_Import(Import_Class):
             category = ''
             raw_goods = ''
             conv_or_eco = self.get_type(line[10])
-            variant = self.get_name(line[1]).strip()
+            variant = " ".join(self.get_name(line[1]).split())
 
             #No amount of units and no price per unit, so cant calculate
             price_per_unit = ''
@@ -52,7 +47,3 @@ class CBP_Import(Import_Class):
             rows.append(row)
         return rows
 
-cbp = CBP_Import(CBP)
-data = cbp.import_data('Specialisterne\\CBP bageri.xlsx')
-res = pd.DataFrame(data,columns = COLUMN_NAMES)
-export_excel(res,'test.xlsx')

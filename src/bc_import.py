@@ -1,9 +1,6 @@
-from ast import Continue
-from multiprocessing.sharedctypes import Value
 import pandas as pd
-from constants import BC, COLUMN_NAMES
 from import_class import Import_Class
-from import_files import export_excel, import_excel, import_excel_sheet
+from import_files import  import_excel
 import re
 
 class BC_Import(Import_Class):
@@ -14,12 +11,6 @@ class BC_Import(Import_Class):
         if res:
             return True
         return False
-
-    def get_name_variant(self,name):
-        return name
-
-    def get_origin_country(self,line):
-        return line[16]
 
     def get_total_kg(self,line,type):
         if type == 'Konv':
@@ -44,8 +35,9 @@ class BC_Import(Import_Class):
         elif not pd.isna(line[10]):
             return '-'
 
-    def translate_bc_data(self,filename):
+    def import_data(self,filename):
         df_bc_data = import_excel(filename)
+
         rows = []
         year = self.get_year()
         quarter = self.get_quarter()
@@ -53,7 +45,6 @@ class BC_Import(Import_Class):
         section_pass = False
         hospital = ""
 
-        #        ,,,amount_kg,price_per_kg,origin_country
         for i in range(3,len(df_bc_data)):
             try:
                 line = df_bc_data.iloc[i]
@@ -69,6 +60,8 @@ class BC_Import(Import_Class):
                                 hospital = 'no_id'
                             pass
                         elif self.is_section(line[1]):
+                            #sections are defined by XX - <section name>, xx is the 2 numbers. Anything in 9x section is not related to food services
+                            #89 is also a non food service number
                                 numbers = line[1][:2]
                                 if '9' == line[1][0] or '89' == numbers:
                                     section_pass = True
@@ -79,7 +72,7 @@ class BC_Import(Import_Class):
                     continue
                 name = line[1]
                 conv_or_eco = self.get_type(line)
-                variant = self.get_name_variant(name)
+                variant = " ".join(name.split())
                 id = line[0]
                 category = self.get_category(id)
                 raw_goods = self.get_raw_goods(id)
@@ -87,16 +80,10 @@ class BC_Import(Import_Class):
                 total_price = self.get_total_price(line)
                 amount_kg = self.get_total_kg(line,conv_or_eco)
                 price_per_kg = total_price/amount_kg
-                origin_country = self.get_origin_country(line)
+                origin_country = line[16]
                 row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
                     variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
                 rows.append(row)
             except ValueError:
                 pass
         return rows
-bc = BC_Import(BC)
-data = bc.translate_bc_data('Specialisterne\\BC.xlsx')
-res = pd.DataFrame(data,columns = COLUMN_NAMES)
-export_excel(res,'test.xlsx')
-
-        #        rows.append()

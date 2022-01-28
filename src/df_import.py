@@ -3,10 +3,7 @@ from os import listdir
 import pandas as pd
 from import_class import Import_Class
 from import_files import import_excel
-from constants import DF
-from constants import COLUMN_NAMES
 import re
-from import_files import export_excel
 
 
 class DF_Import(Import_Class):
@@ -20,7 +17,7 @@ class DF_Import(Import_Class):
     def sanitize_name(self,name):
         name = re.compile(re.escape('#')).sub('',name)
         name = re.compile(re.escape('øko'),re.IGNORECASE).sub('',name)
-        return name.strip()
+        return " ".join(name.split())
     
     def is_ignored(self,df,id):
         row = df.loc[df['ID'] == int(id)]
@@ -98,9 +95,3 @@ class DF_Import(Import_Class):
             arr = arr + res
         return arr
 
-path = 'Specialisterne\\Dagrofa'
-
-df = DF_Import(DF)
-data = df.import_dir(path)
-res = pd.DataFrame(data,columns = COLUMN_NAMES)
-export_excel(res,'test.xlsx')

@@ -2,7 +2,6 @@
 import pandas as pd
 from import_class import Import_Class
 from import_files import get_excel_sheet_names, import_excel_sheet,export_excel
-from constants import EM,COLUMN_NAMES
 
 
 class EM_Import(Import_Class):
@@ -23,7 +22,7 @@ class EM_Import(Import_Class):
         sheets = get_excel_sheet_names(filename)
         for sheet in sheets:
             try:
-                hospital = self.get_hospital(sheet)
+                hospital = self.get_hospital(sheet,False)
             except KeyError:
                 #The hospital dosent exist in file
                 continue
@@ -38,7 +37,7 @@ class EM_Import(Import_Class):
                     continue
 
                 conv_or_eco = self.get_type(line[1])
-                variant = self.get_variant(line[0])
+                variant = " ".join(self.get_variant(line[0]).split())
                 category = self.get_category(variant)
                 raw_goods = self.get_raw_goods(variant)
                 price_per_unit = self.get_price_per_unit(line)
@@ -51,9 +50,3 @@ class EM_Import(Import_Class):
                 rows.append(row)
         return rows
 
-em = EM_Import(EM)
-fp = 'Specialisterne\\Emmerys 01-04-2021..30-06-2021.xlsx'
-
-data = em.import_data(fp)
-res = pd.DataFrame(data,columns = COLUMN_NAMES)
-#export_excel(res,'test.xlsx')
