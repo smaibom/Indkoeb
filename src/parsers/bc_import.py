@@ -24,7 +24,7 @@ class BC_Import(Import_Class):
         except AttributeError:
             raise ParserError()
 
-    def parse_line(self,index):
+    def parse_line(self,index,allow_nocat = False):
         line = self.data.iloc[index]
         #Empty lines contains no data
         if pd.isna(line[0]):
@@ -58,15 +58,23 @@ class BC_Import(Import_Class):
         conv_or_eco = self.get_type(line)
         variant = " ".join(name.split())
         id = line[0]
-        category = self.get_category(id)
-        raw_goods = self.get_raw_goods(id)
+
         price_per_unit = self.get_price_per_unit(line)
         total_price = self.get_total_price(line)
         amount_kg = self.get_total_kg(line,conv_or_eco)
         price_per_kg = total_price/amount_kg
         origin_country = line[16]
+        try:
+            category = self.get_category(id)
+            raw_goods = self.get_raw_goods(id)
+        except NoCategoryError:
+            if allow_nocat:
+                category = ""
+                raw_goods = ""
+            else:
+                raise NoCategoryError()
         row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-            variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+            variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
 
 
@@ -100,7 +108,7 @@ class BC_Import(Import_Class):
             return 'Konv'
         elif not pd.isna(line[10]):
             return '-'
-
+    """
     def import_data(self,filename):
         df_bc_data = import_excel(filename)
 
@@ -152,8 +160,9 @@ class BC_Import(Import_Class):
                 price_per_kg = total_price/amount_kg
                 origin_country = line[16]
                 row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-                    variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+                    variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
                 rows.append(row)
             except ValueError:
                 pass
         return rows
+"""

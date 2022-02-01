@@ -21,7 +21,7 @@ class HK_Import(Import_Class):
         except AttributeError:
             raise ParserError()
 
-    def parse_line(self,index):
+    def parse_line(self,index,allow_nocat = False):
         line = self.data.loc[index]
         #Only lines with a number in the first column contanis data
         if not type(line[0]) == int:
@@ -32,15 +32,12 @@ class HK_Import(Import_Class):
         year = self.get_year()
         quarter = self.get_quarter()
         source = self.get_source()
-        #Error in their data? remove later
-        if 'HØ                             3KG' in line[3]:
-            pass               
-        elif line[4] in sections_to_ignore:
+        #Error in their data? remove later  
+        if line[4] in sections_to_ignore:
             return
         hospital = self.get_hospital(line[0],True)
         id = line[2]
-        category = self.get_category(id)
-        raw_goods = self.get_raw_goods(id)
+
         conv_or_eco = self.get_type(line[6])
         variant = " ".join(line[3].split())
         total_price = self.get_total_price(line)
@@ -49,8 +46,17 @@ class HK_Import(Import_Class):
         amount_kg = self.get_total_kg(line)
         price_per_kg = total_price/amount_kg
         origin_country = line[7]
+        try:
+            category = self.get_category(id)
+            raw_goods = self.get_raw_goods(id)
+        except NoCategoryError:
+            if allow_nocat:
+                category = ''
+                raw_goods = ''
+            else:
+                raise NoCategoryError()
         row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-                variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+                variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
 
     def get_type(self,value):

@@ -43,7 +43,7 @@ class DF_Import(Import_Class):
         except AttributeError:
             raise ParserError()
 
-    def parse_line(self,index):
+    def parse_line(self,index,allow_nocat = False):
         line = self.data.loc[index]
         #Check if first value is a number, all entries are numbers in DF
         try:
@@ -60,8 +60,15 @@ class DF_Import(Import_Class):
         if self.is_ignored(self.ignore,item_id):
             return
         item_id = int(item_id)
-        category = self.get_category(item_id)
-        raw_goods = self.get_raw_goods(item_id)
+        try:
+            category = self.get_category(item_id)
+            raw_goods = self.get_raw_goods(item_id)
+        except NoCategoryError:
+            if allow_nocat:
+                category = ''
+                raw_goods = ''
+            else:
+                raise NoCategoryError()
         #For some reason pandas report the length of the line as larger than it is when using length
         length = line.index[-1]+1
         rows = []
@@ -75,7 +82,7 @@ class DF_Import(Import_Class):
                     price_per_unit = line[j+3]
                     price_per_kg = total_price/amount_kg
                     row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-                                variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+                                variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,item_id]
                     rows.append(row)
             except ValueError:
                 pass

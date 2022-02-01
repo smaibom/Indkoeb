@@ -1,5 +1,4 @@
 import re
-from os import listdir
 from src.parsers.import_class import Import_Class
 from src.import_files import import_excel
 from src.constants import AC
@@ -61,7 +60,7 @@ class AC_Import(Import_Class):
         except AttributeError:
             raise ParserError()
 
-    def parse_line(self,index):
+    def parse_line(self,index,allow_nocat = False):
         line = self.data.loc[index]
         year = self.get_year()
         quarter = self.get_quarter()
@@ -78,19 +77,25 @@ class AC_Import(Import_Class):
         self.get_unit_amount(line)
         amount_kg = self.get_total_kg(line)
         price_per_kg = total_price/amount_kg
+        origin_country = self.get_origin_country(name)
         
         #Name is in the 3rd column
         id = line[2]
-        category = self.get_category(id)
-        raw_goods = self.get_raw_goods(id)
-
-        origin_country = self.get_origin_country(name)
+        try:
+            category = self.get_category(id)
+            raw_goods = self.get_raw_goods(id)
+        except NoCategoryError:
+            if allow_nocat:
+                category = ''
+                raw_goods = ''
+            else:
+                raise NoCategoryError
         row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-                    variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+                    variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
 
 
-
+"""
     def import_data(self,dir,filename):
         df_data = import_excel(dir + '\\' + filename)
 
@@ -144,4 +149,4 @@ class AC_Import(Import_Class):
             res = self.import_data(dir,filename)
             arr = arr + res
         return arr
-
+"""

@@ -23,7 +23,7 @@ class SG_Import(Import_Class):
         except AttributeError:
             raise ParserError()
     
-    def parse_line(self,index):
+    def parse_line(self,index,allow_nocat = False):
         
         year = self.get_year()
         quarter = self.get_quarter()
@@ -43,8 +43,7 @@ class SG_Import(Import_Class):
     
         #Item id is in 2nd column
         id = line[1]
-        category = self.get_category(id)
-        raw_goods = self.get_raw_goods(id)
+
         conv_or_eco = self.get_type(line[0])
         variant = " ".join(self.strip_sg_item_name(line[2]).split())
         total_price = self.get_total_price(line)
@@ -54,8 +53,17 @@ class SG_Import(Import_Class):
         price_per_unit = total_price/amount_units
         #No origin country for this dataset
         origin_country = ""
+        try:
+            category = self.get_category(id)
+            raw_goods = self.get_raw_goods(id)
+        except NoCategoryError:
+            if allow_nocat:
+                category = ''
+                raw_goods = ''
+            else:
+                raise NoCategoryError()
         row = [year,quarter,self.hospital,category,source,raw_goods,conv_or_eco,
-                variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+                variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
 
     def strip_sg_item_name(self,name):
