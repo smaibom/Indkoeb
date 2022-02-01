@@ -1,6 +1,6 @@
 import re
 from src.parsers.import_class import Import_Class
-from src.import_files import import_excel
+from src.import_files import import_excel, new_import_excel_sheet
 from src.constants import AC
 from src.errors import InvalidFileFormatError, NoCategoryError,ParserError
 
@@ -46,9 +46,10 @@ class AC_Import(Import_Class):
         return country
 
 
-    def load_data(self,filename):
+    def load_data(self,filename,sheet):
         try:
-            self.data = import_excel(filename)
+            
+            self.data = new_import_excel_sheet(filename,sheet)
             self.check_headers(self.data.loc[0])
             hospital_nr = self.get_hospital_nr_from_filename(filename.split('/')[-1])
             self.hospital = self.get_hospital(hospital_nr,True)

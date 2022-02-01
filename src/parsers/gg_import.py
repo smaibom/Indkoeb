@@ -9,7 +9,7 @@ class GG_Import(Import_Class):
     def __init__(self):
         super().__init__(GG)
 
-    def load_data(self,filename):
+    def load_data(self,filename,sheet):
         try:
             self.data = import_csv(filename,GG_CSV_HEADERS)
             self.check_headers(self.data.loc[1])

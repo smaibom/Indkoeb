@@ -40,5 +40,9 @@ HK_HEADERS = ['Kd-nr.','FA','Art.-nr.']
 HK = {'headers' : HK_HEADERS, 'file_start': 1, 'year' : 2021, 'quarter' : 'K2', 'source' : 'HK','total_price_index' : 10,
     'total_weight_index' : 12,'units_index' : 9}
 
+			
+
+CBP_HEADERS = ['Kunder - Kunde nr og Navn','Produkter - Vare nr & Navn.','Mængde (kg)','Omsætning']
+CBP =  {'headers' : CBP_HEADERS, 'year' : 2021, 'quarter' : 'K2', 'source' : 'CBP', 'total_price_index' : 3,'total_weight_index' :2}
+
 EM = {'year' : 2021, 'quarter' : 'K2', 'source' : 'EM', 'total_price_index' : 4, 'total_weight_index' : 6,'price_per_unit_index' : 2}
-CBP =  {'year' : 2021, 'quarter' : 'K2', 'source' : 'CBP', 'total_price_index' : 3,'total_weight_index' :2}

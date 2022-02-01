@@ -3,16 +3,16 @@ import pandas as pd
 from src.constants import SG
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import  import_excel
+from src.import_files import  import_excel, new_import_excel_sheet
 
 
 class SG_Import(Import_Class):
     def __init__(self):
         super().__init__(SG)
 
-    def load_data(self,filename):
+    def load_data(self,filename,sheet):
         try:
-            self.data = import_excel(filename,self.static_vals['file_start'])
+            self.data = new_import_excel_sheet(filename,sheet,self.static_vals['file_start'])
             self.check_headers(self.data.loc[3])
             self.hospital = self.get_hospital(self.data.iloc[0,0],False)
             #Dont need headers anymore

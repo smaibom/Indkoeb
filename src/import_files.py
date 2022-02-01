@@ -19,9 +19,18 @@ def export_excel(df, filename):
         # set up autofilter
         worksheet.autofilter(0, 0, len(df.index) - 1, len(df.columns) - 1)
 
+def new_import_excel_sheet(filepath,sheet,skiprow = 0, header=None):
+    xls = pd.ExcelFile(filepath)
+    return pd.read_excel(xls, sheet,skiprows = skiprow, header = header)
+
+
 def import_excel_sheet(filepath,sheet):
     xls = pd.ExcelFile(filepath)
     return pd.read_excel(xls, sheet)
+
+def import_excel_sheet_without_headers(filepath,sheet):
+    xls = pd.ExcelFile(filepath)
+    return pd.read_excel(xls, sheet,header=None)
 
 def get_excel_sheet_names(filepath):
     xls = pd.ExcelFile(filepath)

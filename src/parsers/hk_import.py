@@ -3,7 +3,7 @@
 from src.constants import HK
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import import_excel_sheet
+from src.import_files import import_excel_sheet, new_import_excel_sheet
 
 
 
@@ -11,9 +11,9 @@ class HK_Import(Import_Class):
     def __init__(self):
         super().__init__(HK)
 
-    def load_data(self,filename):
+    def load_data(self,filename,sheet):
         try:
-            self.data = import_excel_sheet(filename,'Seite1_2')
+            self.data = new_import_excel_sheet(filename,sheet)
             self.check_headers(self.data.loc[0])
             return len(self.data)
         except ValueError:

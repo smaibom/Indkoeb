@@ -4,7 +4,7 @@ import pandas as pd
 from src.constants import DF
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import import_excel, import_excel_with_headers
+from src.import_files import import_excel, import_excel_with_headers, new_import_excel_sheet
 import re
 
 
@@ -21,9 +21,9 @@ class DF_Import(Import_Class):
                 self.hospitals.append(hospital)
 
 
-    def load_data(self,filename):
+    def load_data(self,filename,sheet):
         try:
-            self.data = import_excel(filename,self.static_vals['file_start'])
+            self.data = new_import_excel_sheet(filename,sheet,self.static_vals['file_start'])
             #Hospital data is in row 7 so we start from there, headers is afterwards
 
             self.check_headers(self.data.loc[1])
@@ -118,7 +118,7 @@ class DF_Import(Import_Class):
             raise ValueError()
         return val
     
-
+"""
     def import_data(self,filename):
         ignore = import_excel('StatiskData\\df_ignore.xlsx')
         df_data = import_excel(filename)
@@ -179,4 +179,4 @@ class DF_Import(Import_Class):
             res = self.import_data(filepath)
             arr = arr + res
         return arr
-
+"""

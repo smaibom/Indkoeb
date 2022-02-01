@@ -1,12 +1,13 @@
 import pandas as pd
 from src.constants import COLUMN_NAMES
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
-from src.import_files import export_excel
+from src.import_files import export_excel, get_excel_sheet_names
 from src.interface.helper_functions import add_to_list, add_to_table
 from src.parsers.ac_import import AC_Import
 from PyQt6.QtCore import QThread, pyqtSignal
 import os
 from src.parsers.bc_import import BC_Import
+from src.parsers.cbp_import import CBP_Import
 from src.parsers.df_import import DF_Import
 from src.parsers.gg_import import GG_Import
 from src.parsers.hk_import import HK_Import
@@ -45,8 +46,8 @@ class ImportThread(QThread):
         self.completed_files = set()
 
         #Parsers available to be used
-        self.parsers = [AC_Import(),BC_Import(),GG_Import(),DF_Import(),SG_Import(),HK_Import()]
-        #self.parsers = [AC_Import()]
+        self.parsers = [AC_Import(),BC_Import(),GG_Import(),DF_Import(),SG_Import(),HK_Import(),CBP_Import()]
+        #self.parsers = [BC_Import(),AC_Import()]
 
     def __del__(self):
         self.wait()
@@ -93,29 +94,50 @@ class ImportThread(QThread):
         args:
             filepath: Path to file
         """
-        #Find parser for file
+      
+
+        if filepath in self.completed_files:
+            self._signal.emit('Already imported %s' % filepath)
+            return
+
         try:
-            (length,parser) = self.load_file(self.parsers,filepath)
-
-        except FileNotFoundError:
-            self._signal.emit('File not found')
-            return
-        except InvalidFileFormatError:
-            self._signal.emit('Invalid file format')
-            return
-        except ParserError:
+            sheets = get_excel_sheet_names(filepath)
+        except ValueError:
+            #Just for csv file handling
+            sheets = [None]
+        #TODO Add more error handling here
+            
+        #Find parser for file
+        is_used = False
+        for sheet in sheets:
+            try:
+                (length,parser) = self.load_file(self.parsers,filepath,sheet)
+            except FileNotFoundError:
+                self._signal.emit('File not found')
+                return
+            except InvalidFileFormatError:
+                self._signal.emit('Invalid file format')
+                return
+            except ParserError:
+                continue
+            is_used = True
+            #Iterate over file contents
+            for i in range(length):
+                res = self.parse_line(parser,i)
+                if res:
+                    self.imported_lines = self.imported_lines + res
+                    self.curadded += len(res)
+                #Update progress bar
+                prog = int(((i+1) / (length))*100)
+                self._signal.emit(str(prog))
+        if is_used:
+            self.completed_files.add(filepath)
+        else:
             self._signal.emit('No parser for file found')
-            return
 
-        #Iterate over file contents
-        for i in range(length):
-            res = self.parse_line(parser,i)
-            if res:
-                self.imported_lines = self.imported_lines + res
-                self.curadded += len(res)
-            #Update progress bar
-            prog = int(((i+1) / (length))*100)
-            self._signal.emit(str(prog))
+        
+
+    
 
 
     def import_dir(self,dirpath):
@@ -137,31 +159,43 @@ class ImportThread(QThread):
                 continue
             
             #Find parser for file
+            is_used = False
             try:
-                (length,parser) = self.load_file(self.parsers,files[j])
+                sheets = get_excel_sheet_names(files[j])
+            except ValueError:
+                #Just for csv file handling
+                sheets = [None]
+            #TODO Add more error handling here
 
-            except FileNotFoundError:
-                self._signal.emit('File not found')
-                return
-            except InvalidFileFormatError:
-                self._signal.emit('Invalid file format')
-                return
-            except ParserError:
+            for sheet in sheets:
+                try:
+                    (length,parser) = self.load_file(self.parsers,files[j],sheet)
+
+                except FileNotFoundError:
+                    self._signal.emit('File not found')
+                    return
+                except InvalidFileFormatError:
+                    self._signal.emit('Invalid file format')
+                    return
+                except ParserError:
+                    continue
+                is_used = True
+        
+                #Iterate over each row in the file
+                for i in range(length):
+                    #Parse line
+                    res = self.parse_line(parser,i)
+                    if res:
+                        self.imported_lines = self.imported_lines + res
+                        self.curadded += len(res)
+                self.completed_files.add(files[j])
+                #Progress bar update
+                prog = int(((j+1) / (num_files))*100)
+                self._signal.emit(str(prog))
+            if is_used:
+                add_to_list(self.import_list,files[j])
+            else:
                 self._signal.emit('No parser for file found')
-                return
-
-            #Iterate over each row in the file
-            for i in range(length):
-                #Parse line
-                res = self.parse_line(parser,i)
-                if res:
-                    self.imported_lines = self.imported_lines + res
-                    self.curadded += len(res)
-            self.completed_files.add(files[j])
-            #Progress bar update
-            prog = int(((j+1) / (num_files))*100)
-            self._signal.emit(str(prog))
-            add_to_list(self.import_list,files[j])
 
     def update_category_changes(self):
         """
@@ -221,7 +255,7 @@ class ImportThread(QThread):
         except IndexError:
             return 
 
-    def load_file(self,parsers,filepath):
+    def load_file(self,parsers,filepath,sheet):
         """
         Loads a xlsx or csv file, finds the parser assosiated with the file that can parse it. It loads the data into the parser selected
         args:
@@ -234,11 +268,13 @@ class ImportThread(QThread):
         """
         for parser in parsers:
             try:
-                length = parser.load_data(filepath)
+                length = parser.load_data(filepath,sheet)
                 return (length,parser)
             except ParserError:
                 pass
             except InvalidFileFormatError:
+                pass
+            except KeyError:
                 pass
         #If no parser is found throw error
         raise ParserError()
