@@ -1,11 +1,26 @@
 
-from import_files import import_excel_sheet
-from import_class import Import_Class
+from src.errors import InvalidFileFormatError, ParserError
+from src.import_files import import_excel_sheet
+from src.parsers.import_class import Import_Class
 import re
+
+from src.constants import CBP
 
 
 class CBP_Import(Import_Class):
+    def __init__(self):
+        super().__init__(CBP)
     
+    def load_data(self,filename):
+        try:
+            self.data = import_excel_sheet(filename,'Sheet1')
+            self.hospital = "no_id"
+            return len(self.data)
+        except ValueError:
+            raise InvalidFileFormatError()
+        except AttributeError:
+            raise ParserError()
+
     def get_type(self,string):
         if string == 'Ej Økologi':
             return 'Konv'

@@ -1,11 +1,12 @@
 import sys
-import time
-from PyQt6.QtWidgets import QApplication, QWidget,QMessageBox,QVBoxLayout,QPushButton,QLabel,QComboBox,QFileDialog,QLineEdit,QMainWindow,QProgressBar
+from PyQt6.QtWidgets import QApplication, QWidget,QVBoxLayout,QPushButton,QFileDialog,QLineEdit,QProgressBar,QCheckBox,QListWidget,QListWidgetItem,QAbstractItemView
+from src.errors import InvalidFileFormatError,NoCategoryError,ParserError
+from src.create_functions import create_button,create_textfield,create_drop_down
+from src.interface.import_thread import ImportThread
+from src.parsers.ac_import import AC_Import
+from src.constants import AC
+import PyQt6.QtCore as QtCore
 
-from create_functions import create_button,create_textfield,create_drop_down
-from ac_import import AC_Import
-from constants import AC
-from PyQt6.QtCore import QThread, pyqtSignal
 
 
 
@@ -60,34 +61,7 @@ class App(QMainWindow):
 
 
 
-class ImportThread(QThread):
-    _signal = pyqtSignal(str)
-    def __init__(self,filepath,parser):
-        super(ImportThread, self).__init__()
-        self.fp = filepath
-        self.parser = parser
-        self.parsers = {'ac' : AC_Import}
 
-    def __del__(self):
-        self.wait()
-
-    def run(self):
-        parser_type = self.parser.currentText()
-        parser = self.parsers[parser_type]()
-        filepath = self.fp.text()
-        try:
-            length = parser.load_data(filepath)
-            for i in range(length):
-                parser.import_line(i)
-                prog = int((i / (length-1))*100)
-                if i == (length-1):
-                    self._signal.emit('Successfully imported %s lines' % length)
-                else:
-                    self._signal.emit(str(prog))
-        except FileNotFoundError:
-            self._signal.emit('File not found')
-        except ValueError:
-            self._signal.emit('Invalid file format')
 
 
 class Example(QWidget):
@@ -105,15 +79,23 @@ class Example(QWidget):
         self.btn = QPushButton('Import')
         self.btn.clicked.connect(self.import_data)
 
-        parserlabel = QLabel('Choose parser')
-
-        self.pcb = QComboBox()
-        self.pcb.addItem('ac')
-
+        self.file_chosen = True
         self.filepath = QLineEdit("Test")
         self.filepath.setReadOnly(True)
+
         self.choosefilebutton = QPushButton('Pick file')
         self.choosefilebutton.clicked.connect(self.choose_file) 
+
+        self.choosedirbutton = QPushButton('Pick dir')
+        self.choosedirbutton.clicked.connect(self.choose_dir) 
+
+        self.imported_list = QListWidget()
+        self.file_or_dir = QCheckBox()
+
+
+        self.thread = ImportThread(self.filepath,self.file_or_dir,self.imported_list)
+        self.thread._signal.connect(self.signal_accept)
+  
 
         self.errorbox = QLineEdit("")
         self.errorbox.setReadOnly(True)
@@ -121,21 +103,20 @@ class Example(QWidget):
         self.resize(600, 100)
 
         self.vbox = QVBoxLayout()
-        self.vbox.addWidget(parserlabel)
-        self.vbox.addWidget(self.pcb)
+
         self.vbox.addWidget(self.filepath)
         self.vbox.addWidget(self.choosefilebutton)
+        self.vbox.addWidget(self.choosedirbutton)
         self.vbox.addWidget(self.pbar)
         self.vbox.addWidget(self.btn)
         self.vbox.addWidget(self.errorbox)
+        self.vbox.addWidget(self.imported_list)
         self.setLayout(self.vbox)
 
 
         
 
     def import_data(self):
-        self.thread = ImportThread(self.filepath,self.pcb)
-        self.thread._signal.connect(self.signal_accept)
         self.thread.start()
         self.btn.setEnabled(False)
 
@@ -155,6 +136,16 @@ class Example(QWidget):
         (fp,_) = dialog.getOpenFileName()
         if fp != '':
             self.filepath.setText(fp)
+            self.file_or_dir.setChecked(True)
+            self.file_chosen = True
+
+    def choose_dir(self):
+        dialog = QFileDialog()
+        dp = dialog.getExistingDirectory()
+        if dp != '':
+            self.filepath.setText(dp)
+            self.file_or_dir.setChecked(False)
+            self.file_chosen = False
 
 
 if __name__ == "__main__":

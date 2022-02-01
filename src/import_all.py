@@ -1,15 +1,23 @@
 #dirs
 import pandas as pd
-from ac_import import AC_Import
-from bc_import import BC_Import
-from constants import BC, EM, GG, HK, CBP,COLUMN_NAMES, AC, DF, SG
-from em_import import EM_Import
-from gg_import import GG_Import
-from hk_import import HK_Import
-from cbp_import import CBP_Import
-from import_files import export_excel
-from df_import import DF_Import
-from sg_import import SG_Import
+from src.parsers.ac_import import AC_Import
+from src.parsers.bc_import import BC_Import
+from src.constants import BC, EM, GG, HK, CBP,COLUMN_NAMES, AC, DF, SG
+from src.import_files import export_excel
+from src.parsers.cbp_import import CBP_Import
+from src.parsers.df_import import DF_Import
+from src.parsers.em_import import EM_Import
+from src.parsers.gg_import import GG_Import
+from src.parsers.hk_import import HK_Import
+from src.parsers.sg_import import SG_Import
+"""
+from src.parsers.em_import import EM_Import
+from src.parsers.gg_import import GG_Import
+from src.parsers.hk_import import HK_Import
+from src.parsers.cbp_import import CBP_Import
+from src.parsers.df_import import DF_Import
+from src.parsers.sg_import import SG_Import
+"""
 
 
 ac_path = 'Specialisterne\\AC'
@@ -24,7 +32,11 @@ hk_path = 'Specialisterne\\Hørkram.xlsx'
 cbp_path = 'Specialisterne\\CBP bageri.xlsx'
 
 arr = []
-bc = BC_Import(BC)
+ac = AC_Import()
+res = ac.import_dir(ac_path)
+arr = arr + res
+
+bc = BC_Import()
 res = bc.import_data(bc_path)
 arr = arr + res
 
@@ -40,13 +52,11 @@ hk = HK_Import(HK)
 res = hk.import_data(hk_path)
 arr = arr + res
 
-cbp = CBP_Import(CBP)
+cbp = CBP_Import()
 res = cbp.import_data(cbp_path)
 arr = arr + res
 
-ac = AC_Import(AC)
-res = ac.import_dir(ac_path)
-arr = arr + res
+
 
 df = DF_Import(DF)
 res = df.import_dir(df_path)
@@ -55,6 +65,7 @@ arr = arr + res
 sg = SG_Import(SG)
 res = sg.import_dir(sg_path)
 arr = arr + res
-
+"""
+"""
 resdf = pd.DataFrame(arr,columns = COLUMN_NAMES)
 export_excel(resdf,'test.xlsx')

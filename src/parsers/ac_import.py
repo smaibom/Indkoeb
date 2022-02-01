@@ -1,8 +1,9 @@
 import re
 from os import listdir
-from import_class import Import_Class
-from import_files import import_excel
-from constants import AC
+from src.parsers.import_class import Import_Class
+from src.import_files import import_excel
+from src.constants import AC
+from src.errors import InvalidFileFormatError, NoCategoryError,ParserError
 
 class AC_Import(Import_Class):
     def __init__(self):
@@ -45,12 +46,27 @@ class AC_Import(Import_Class):
             
         return country
 
-    def import_line(self,index):
+
+    def load_data(self,filename):
+        try:
+            self.data = import_excel(filename)
+            self.check_headers(self.data.loc[0])
+            hospital_nr = self.get_hospital_nr_from_filename(filename.split('/')[-1])
+            self.hospital = self.get_hospital(hospital_nr,True)
+            #Dont need headers anymore
+            self.data = self.data.loc[1:].reset_index()
+            return len(self.data)
+        except ValueError:
+            raise InvalidFileFormatError()
+        except AttributeError:
+            raise ParserError()
+
+    def parse_line(self,index):
         line = self.data.loc[index]
         year = self.get_year()
         quarter = self.get_quarter()
         source = self.get_source()
-        hospital = ''
+        hospital = self.hospital
         #Name is in the 4th column
         name = line[3]
         conv_or_eco = self.get_type(name)
@@ -58,21 +74,22 @@ class AC_Import(Import_Class):
         price_per_unit = self.get_price_per_unit(line)
         total_price = self.get_total_price(line)
 
-        #Name is in the 3rd column
-        id = line[2]
-        category = self.get_category(id)
-        raw_goods = self.get_raw_goods(id)
         #Validation check
         self.get_unit_amount(line)
         amount_kg = self.get_total_kg(line)
         price_per_kg = total_price/amount_kg
-        origin_country = self.get_origin_country(name)
-        return [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
-                    variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+        
+        #Name is in the 3rd column
+        id = line[2]
+        category = self.get_category(id)
+        raw_goods = self.get_raw_goods(id)
 
-    def load_data(self,filename):
-        self.data = import_excel(filename)
-        return len(self.data)
+        origin_country = self.get_origin_country(name)
+        row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
+                    variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None]
+        return [row]
+
+
 
     def import_data(self,dir,filename):
         df_data = import_excel(dir + '\\' + filename)
@@ -96,18 +113,23 @@ class AC_Import(Import_Class):
 
                 #Name is in the 3rd column
                 id = line[2]
-                category = self.get_category(id)
-                raw_goods = self.get_raw_goods(id)
+
                 #Validation check
                 self.get_unit_amount(line)
                 amount_kg = self.get_total_kg(line)
                 price_per_kg = total_price/amount_kg
                 origin_country = self.get_origin_country(name)
+                try:
+                    category = self.get_category(id)
+                    raw_goods = self.get_raw_goods(id)
+                except NoCategoryError:
+                    category = ""
+                    raw_goods = ""
                 rows.append([year,quarter,hospital,category,source,raw_goods,conv_or_eco,
                             variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None])
             except ValueError:
                 pass
-
+            
         return rows
 
 

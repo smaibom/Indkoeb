@@ -1,15 +1,30 @@
 
 import pandas as pd
-from import_class import Import_Class
-from import_files import get_excel_sheet_names, import_excel_sheet,export_excel
+from src.constants import EM
+from src.errors import NoCategoryError
+from src.parsers.import_class import Import_Class
+from src.import_files import get_excel_sheet_names, import_excel_sheet
 
 
 class EM_Import(Import_Class):
+    def __init__(self):
+        super().__init__(EM)
 
     def get_variant(self,name):
         if 'øko' in name.lower():
             return name.rstrip()[:-4]
         return name
+
+    def load_data(self,filename):
+        try:
+            self.data = import_excel_sheet(filename,'Sheet1')
+            self.hospital = "no_id"
+            return len(self.data)
+        except ValueError:
+            raise InvalidFileFormatError()
+        except AttributeError:
+            raise ParserError()
+
 
 
     def import_data(self,filename):
@@ -38,8 +53,12 @@ class EM_Import(Import_Class):
 
                 conv_or_eco = self.get_type(line[1])
                 variant = " ".join(self.get_variant(line[0]).split())
-                category = self.get_category(variant)
-                raw_goods = self.get_raw_goods(variant)
+                try:
+                    category = self.get_category(variant)
+                    raw_goods = self.get_raw_goods(variant)
+                except NoCategoryError:
+                    category = ""
+                    raw_goods = ""
                 price_per_unit = self.get_price_per_unit(line)
                 total_price = self.get_total_price(line)
                 amount_kg = self.get_total_kg(line)

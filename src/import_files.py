@@ -1,9 +1,12 @@
 import pandas as pd
 
-from constants import COLUMN_NAMES, PRICE_PER_UNIT, TOTAL_PRICE,HOSPITALS_TRANSLATE_FILE_PATH
+from src.constants import COLUMN_NAMES, PRICE_PER_UNIT, TOTAL_PRICE,HOSPITALS_TRANSLATE_FILE_PATH
 
 
-def import_excel(filepath):
+def import_excel(filepath,skiprow = 0):
+    return pd.read_excel(filepath,skiprows = skiprow,header=None)
+
+def import_excel_with_headers(filepath):
     return pd.read_excel(filepath)
 
 def import_csv(filepath,headers):
