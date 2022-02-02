@@ -3,6 +3,10 @@ COLUMN_NAMES = ['År','Kvartal','Hospital','Råvarekategori','Leverandør','Råv
                 'Oprindelse','Kg CO2-eq pr kg','Kg CO2-eq pr kg total','Kg CO2-eq pr MJ total','Kg CO2-eq pr g protein','Kg CO2-eq pr g protein total',
                 'Arealanvendelse m2','Arealanvendelse m2 total','CO2 tal']
 
+CATEGORY_INDEX = 3
+RAW_GOODS_INDEX = 5
+NAME_INDEX = 7
+
 																		
 PRICE_PER_UNIT = {'ac' : 'Pris pr. Enhed', 'gg' : 11}
 TOTAL_PRICE = {'ac' : 'Pris i alt', 'gg' : 12, 'sg' : 5}
@@ -11,9 +15,11 @@ TOTAL_UNITS = {'ac' : 'Antal Enheder', 'sg' : 3}
 
 HOSPITALS_TRANSLATE_FILE_PATH = 'StatiskData\\hospitals.xlsx'
 CATEGORY_FILE_PATH = 'StatiskData\\categories.xlsx'
+CATEGORY_FILE_HEADERS = ['ID','Råvarekategori','Råvare']
 
-GG_CSV_HEADERS = ['Source No','Item No','ItemDescription','UnitOfMeasure','Quantity','Amount','NettoWeight','TotalWeight','Ecology','Oprindelse', 'empty','Pris pr enhed',
-              'Pris i alt']
+GG_CSV_HEADERS = ['Source No','Item No','ItemDescription','UnitOfMeasure','Quantity','Amount',
+                  'NettoWeight','TotalWeight','Ecology','Oprindelse', 'empty','Pris pr enhed',
+                  'Pris i alt']
 
 
 AC_HEADERS = ['Kundenr','Kundenavn','Varenr','Varebeskrivelse','Antal Enheder','Netto kg','Pris i alt','Pris pr. Enhed']
@@ -40,9 +46,10 @@ HK_HEADERS = ['Kd-nr.','FA','Art.-nr.']
 HK = {'headers' : HK_HEADERS, 'file_start': 1, 'year' : 2021, 'quarter' : 'K2', 'source' : 'HK','total_price_index' : 10,
     'total_weight_index' : 12,'units_index' : 9}
 
-			
 
 CBP_HEADERS = ['Kunder - Kunde nr og Navn','Produkter - Vare nr & Navn.','Mængde (kg)','Omsætning']
 CBP =  {'headers' : CBP_HEADERS, 'year' : 2021, 'quarter' : 'K2', 'source' : 'CBP', 'total_price_index' : 3,'total_weight_index' :2}
 
-EM = {'year' : 2021, 'quarter' : 'K2', 'source' : 'EM', 'total_price_index' : 4, 'total_weight_index' : 6,'price_per_unit_index' : 2}
+
+EM_HEADERS = ['Lokation:']
+EM = {'headers': EM_HEADERS, 'year' : 2021, 'quarter' : 'K2', 'source' : 'EM', 'total_price_index' : 4, 'total_weight_index' : 6,'price_per_unit_index' : 2}

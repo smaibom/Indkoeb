@@ -1,7 +1,7 @@
 import pandas as pd
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import  import_excel, new_import_excel_sheet
+from src.excel_file_functions import import_excel_sheet
 import re
 
 from src.constants import BC
@@ -10,9 +10,12 @@ class BC_Import(Import_Class):
     def __init__(self):
         super().__init__(BC)
 
+    def __str__(self):
+        return 'bc'
+
     def load_data(self,filename,sheet):
         try:
-            self.data = new_import_excel_sheet(filename,sheet,self.static_vals['file_start'])
+            self.data = import_excel_sheet(filename,sheet,self.static_vals['file_start'])
             self.check_headers(self.data.loc[0])
             self.section_pass = False
             self.hospital = ""
@@ -33,7 +36,7 @@ class BC_Import(Import_Class):
                     #Some hospitals got # in their string that dosent exist in the data
                     hospital_name = line[1].replace('#','')
                     try:
-                        self.hospital = self.get_hospital(hospital_name,False)
+                        self.hospital = self.get_hospital(hospital_name)
                     except KeyError:
                         self.hospital = 'no_id'
                     pass
@@ -64,15 +67,19 @@ class BC_Import(Import_Class):
         amount_kg = self.get_total_kg(line,conv_or_eco)
         price_per_kg = total_price/amount_kg
         origin_country = line[16]
-        try:
-            category = self.get_category(id)
-            raw_goods = self.get_raw_goods(id)
-        except NoCategoryError:
+        category = self.get_category(id)
+        raw_goods = self.get_raw_goods(id)
+        if not category:
             if allow_nocat:
-                category = ""
-                raw_goods = ""
+                category = ''
             else:
-                raise NoCategoryError()
+                raise NoCategoryError
+        if not raw_goods:
+            if allow_nocat:
+                raw_goods = ''
+            else:
+                raise NoCategoryError
+
         row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
             variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]

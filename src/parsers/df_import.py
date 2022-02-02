@@ -1,10 +1,9 @@
 
-from os import listdir
 import pandas as pd
 from src.constants import DF
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import import_excel, import_excel_with_headers, new_import_excel_sheet
+from src.excel_file_functions import import_excel, import_excel_sheet
 import re
 
 
@@ -12,18 +11,21 @@ class DF_Import(Import_Class):
     def __init__(self):
         super().__init__(DF)
     
+    def __str__(self):
+        return 'df'
+
     def get_hospitals_from_line(self,line):
         #the 5th column is where the first hospital data will occur
         for i in range(4,len(line),4):
             if not pd.isna(line[i]):
                 hospital_id = line[i].split(' ')[0]
-                hospital = self.get_hospital(hospital_id,True)
+                hospital = self.get_hospital(int(hospital_id))
                 self.hospitals.append(hospital)
 
 
     def load_data(self,filename,sheet):
         try:
-            self.data = new_import_excel_sheet(filename,sheet,self.static_vals['file_start'])
+            self.data = import_excel_sheet(filename,sheet,self.static_vals['file_start'])
             #Hospital data is in row 7 so we start from there, headers is afterwards
 
             self.check_headers(self.data.loc[1])
@@ -36,7 +38,7 @@ class DF_Import(Import_Class):
             self.data = self.data.loc[2:].reset_index()
 
             #DF data dosent have any indicators for what to ignore so we have a ignore file with data
-            self.ignore = import_excel_with_headers('StatiskData\\df_ignore.xlsx')
+            self.ignore = import_excel('StatiskData\\df_ignore.xlsx',import_header = True)
             return len(self.data)
         except ValueError:
             raise InvalidFileFormatError()
@@ -60,15 +62,18 @@ class DF_Import(Import_Class):
         if self.is_ignored(self.ignore,item_id):
             return
         item_id = int(item_id)
-        try:
-            category = self.get_category(item_id)
-            raw_goods = self.get_raw_goods(item_id)
-        except NoCategoryError:
+        category = self.get_category(item_id)
+        raw_goods = self.get_raw_goods(item_id)
+        if not category:
             if allow_nocat:
                 category = ''
+            else:
+                raise NoCategoryError
+        if not raw_goods:
+            if allow_nocat:
                 raw_goods = ''
             else:
-                raise NoCategoryError()
+                raise NoCategoryError
         #For some reason pandas report the length of the line as larger than it is when using length
         length = line.index[-1]+1
         rows = []
@@ -154,7 +159,7 @@ class DF_Import(Import_Class):
                 try:
                     if not pd.isna(line[j]):
                         hospital_id = hospital_line[j].split(' ')[0]
-                        hospital = self.get_hospital(hospital_id,True)
+                        hospital = self.get_hospital(int(hospital_id))
 
                         variant = self.sanitize_name(line[1])
                         amount_kg = self.get_total_kg(line,j+1)

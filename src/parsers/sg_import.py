@@ -3,18 +3,21 @@ import pandas as pd
 from src.constants import SG
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import  import_excel, new_import_excel_sheet
+from src.excel_file_functions import  import_excel_sheet
 
 
 class SG_Import(Import_Class):
     def __init__(self):
         super().__init__(SG)
 
+    def __str__(self):
+        return 'sg'
+
     def load_data(self,filename,sheet):
         try:
-            self.data = new_import_excel_sheet(filename,sheet,self.static_vals['file_start'])
+            self.data = import_excel_sheet(filename,sheet,self.static_vals['file_start'])
             self.check_headers(self.data.loc[3])
-            self.hospital = self.get_hospital(self.data.iloc[0,0],False)
+            self.hospital = self.get_hospital(self.data.iloc[0,0])
             #Dont need headers anymore
             self.data = self.data[3:].reset_index()
             return len(self.data)
@@ -53,15 +56,18 @@ class SG_Import(Import_Class):
         price_per_unit = total_price/amount_units
         #No origin country for this dataset
         origin_country = ""
-        try:
-            category = self.get_category(id)
-            raw_goods = self.get_raw_goods(id)
-        except NoCategoryError:
+        category = self.get_category(id)
+        raw_goods = self.get_raw_goods(id)
+        if not category:
             if allow_nocat:
                 category = ''
+            else:
+                raise NoCategoryError
+        if not raw_goods:
+            if allow_nocat:
                 raw_goods = ''
             else:
-                raise NoCategoryError()
+                raise NoCategoryError
         row = [year,quarter,self.hospital,category,source,raw_goods,conv_or_eco,
                 variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
@@ -72,7 +78,7 @@ class SG_Import(Import_Class):
             return name.rstrip()
         return name
 
-    
+    """
     def import_data(self,filename):
         df_data = import_excel(filename)
         
@@ -81,7 +87,7 @@ class SG_Import(Import_Class):
         source = self.get_source()
 
         #The hospital info is on the 2nd row and first column of the sheet
-        hospital = self.get_hospital(df_data.iloc[1,0],False)
+        hospital = self.get_hospital(df_data.iloc[1,0])
         #Data starts from row 5-6 in the excel sheet
         rows = []
         for i in range(4,len(df_data)):
@@ -130,5 +136,5 @@ class SG_Import(Import_Class):
             arr = arr + res
         return arr
 
-
+"""
             

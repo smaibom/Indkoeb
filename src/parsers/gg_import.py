@@ -2,12 +2,16 @@ import pandas as pd
 from src.constants import GG, GG_CSV_HEADERS,GG_HEADERS
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import import_csv
+from src.excel_file_functions import import_csv
 
 
 class GG_Import(Import_Class):
     def __init__(self):
         super().__init__(GG)
+
+
+    def __str__(self):
+        return 'gg'
 
     def load_data(self,filename,sheet):
         try:
@@ -30,7 +34,7 @@ class GG_Import(Import_Class):
             return
         #If the entry on first column is not a number and the other checks have passed its the hospital name
         elif not line[0].isnumeric():
-            self.hospital = self.get_hospital(line[0],False)
+            self.hospital = self.get_hospital(line[0])
             
 
         year = self.get_year()
@@ -49,15 +53,18 @@ class GG_Import(Import_Class):
         amount_kg = self.get_total_kg(line)
         price_per_kg = total_price/amount_kg
         origin_country = 'DK'
-        try:
-            category = self.get_category(id)
-            raw_goods = self.get_raw_goods(id)
-        except NoCategoryError:
+        category = self.get_category(id)
+        raw_goods = self.get_raw_goods(id)
+        if not category:
             if allow_nocat:
                 category = ''
+            else:
+                raise NoCategoryError
+        if not raw_goods:
+            if allow_nocat:
                 raw_goods = ''
             else:
-                raise NoCategoryError()
+                raise NoCategoryError
         row = [year,quarter,self.hospital,category,source,raw_goods,conv_or_eco,
             variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
@@ -91,7 +98,7 @@ class GG_Import(Import_Class):
         if string == '1':
             return 'Øko'
         return 'Konv'
-
+"""
     def import_data(self,csv):
         df_data = import_csv(csv,GG_HEADERS)
         rows = []
@@ -138,4 +145,4 @@ class GG_Import(Import_Class):
                 pass
         return rows
 
-
+"""

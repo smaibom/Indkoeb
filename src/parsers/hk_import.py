@@ -3,7 +3,7 @@
 from src.constants import HK
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
 from src.parsers.import_class import Import_Class
-from src.import_files import import_excel_sheet, new_import_excel_sheet
+from src.excel_file_functions import import_excel_sheet
 
 
 
@@ -11,9 +11,13 @@ class HK_Import(Import_Class):
     def __init__(self):
         super().__init__(HK)
 
+
+    def __str__(self):
+        return 'hk'
+
     def load_data(self,filename,sheet):
         try:
-            self.data = new_import_excel_sheet(filename,sheet)
+            self.data = import_excel_sheet(filename,sheet)
             self.check_headers(self.data.loc[0])
             return len(self.data)
         except ValueError:
@@ -35,7 +39,7 @@ class HK_Import(Import_Class):
         #Error in their data? remove later  
         if line[4] in sections_to_ignore:
             return
-        hospital = self.get_hospital(line[0],True)
+        hospital = self.get_hospital(int(line[0]))
         id = line[2]
 
         conv_or_eco = self.get_type(line[6])
@@ -46,15 +50,18 @@ class HK_Import(Import_Class):
         amount_kg = self.get_total_kg(line)
         price_per_kg = total_price/amount_kg
         origin_country = line[7]
-        try:
-            category = self.get_category(id)
-            raw_goods = self.get_raw_goods(id)
-        except NoCategoryError:
+        category = self.get_category(id)
+        raw_goods = self.get_raw_goods(id)
+        if not category:
             if allow_nocat:
                 category = ''
+            else:
+                raise NoCategoryError
+        if not raw_goods:
+            if allow_nocat:
                 raw_goods = ''
             else:
-                raise NoCategoryError()
+                raise NoCategoryError
         row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
                 variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]
@@ -66,7 +73,7 @@ class HK_Import(Import_Class):
             return 'Konv'
         return '-'
 
-
+    """
     def import_data(self,filename):
         sections_to_ignore = ['Non food, etc.','Gastronomie- & storkøkkentilbehør','Engangsmaterialer / folier / filter','Rengøring & hygiene']
 
@@ -86,7 +93,7 @@ class HK_Import(Import_Class):
                 elif line[4] in sections_to_ignore:
                     continue
 
-                hospital = self.get_hospital(line[0],True)
+                hospital = self.get_hospital(int(line[0]))
                 id = line[2]
                 try:
                     category = self.get_category(id)
@@ -108,5 +115,5 @@ class HK_Import(Import_Class):
             except ValueError:
                 pass
         return rows
-
+"""
 

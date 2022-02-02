@@ -1,12 +1,15 @@
 import re
 from src.parsers.import_class import Import_Class
-from src.import_files import import_excel, new_import_excel_sheet
+from src.excel_file_functions import import_excel_sheet
 from src.constants import AC
 from src.errors import InvalidFileFormatError, NoCategoryError,ParserError
 
 class AC_Import(Import_Class):
     def __init__(self):
         super().__init__(AC)
+
+    def __str__(self):
+        return 'ac'
 
     def get_hospital_nr_from_filename(self,filename):
         """
@@ -48,11 +51,10 @@ class AC_Import(Import_Class):
 
     def load_data(self,filename,sheet):
         try:
-            
-            self.data = new_import_excel_sheet(filename,sheet)
+            self.data = import_excel_sheet(filename,sheet)
             self.check_headers(self.data.loc[0])
             hospital_nr = self.get_hospital_nr_from_filename(filename.split('/')[-1])
-            self.hospital = self.get_hospital(hospital_nr,True)
+            self.hospital = self.get_hospital(int(hospital_nr))
             #Dont need headers anymore
             self.data = self.data.loc[1:].reset_index()
             return len(self.data)
@@ -82,15 +84,21 @@ class AC_Import(Import_Class):
         
         #Name is in the 3rd column
         id = line[2]
-        try:
-            category = self.get_category(id)
-            raw_goods = self.get_raw_goods(id)
-        except NoCategoryError:
+
+
+        category = self.get_category(id)
+        raw_goods = self.get_raw_goods(id)
+        if not category:
             if allow_nocat:
                 category = ''
+            else:
+                raise NoCategoryError
+        if not raw_goods:
+            if allow_nocat:
                 raw_goods = ''
             else:
                 raise NoCategoryError
+
         row = [year,quarter,hospital,category,source,raw_goods,conv_or_eco,
                     variant,price_per_unit,total_price,amount_kg,price_per_kg,origin_country,None,None,None,None,None,None,None,None,id]
         return [row]

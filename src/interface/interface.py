@@ -98,15 +98,18 @@ class Example(QWidget):
         self.imported_list = QListWidget()
 
         self.missing_info_list = QTableWidget()
-        self.missing_info_list.setColumnCount(4) 
+        self.missing_info_list.setColumnCount(5) 
         header0 = QTableWidgetItem('ID')
         header1 = QTableWidgetItem('Navn')
         header2 = QTableWidgetItem('Råvarekategori')
         header3 = QTableWidgetItem('Råvare')
+        header4 = QTableWidgetItem('index')
         self.missing_info_list.setHorizontalHeaderItem(0,header0)
         self.missing_info_list.setHorizontalHeaderItem(1,header1)
         self.missing_info_list.setHorizontalHeaderItem(2,header2)
         self.missing_info_list.setHorizontalHeaderItem(3,header3)
+        self.missing_info_list.setHorizontalHeaderItem(4,header4)
+        self.missing_info_list.setColumnHidden(4,True)
 
 
 
@@ -162,7 +165,7 @@ class Example(QWidget):
 
     def choose_file(self):
         dialog = QFileDialog()
-        (fp,_) = dialog.getOpenFileName()
+        (fp,_) = dialog.getOpenFileName(filter = 'Excel Files(*.xlsx *.csv)')
         if fp != '':
             self.filepath.setText(fp)
             self.thread_args['load_file'] = True
@@ -180,5 +183,3 @@ if __name__ == "__main__":
     ex = Example()
     ex.show()
     sys.exit(app.exec())
-    #ex = App()
-    #sys.exit(app.exec())

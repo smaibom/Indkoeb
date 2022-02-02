@@ -1,17 +1,11 @@
 import pandas as pd
-from src.constants import COLUMN_NAMES
+from src.constants import CATEGORY_FILE_PATH, CATEGORY_INDEX, COLUMN_NAMES, NAME_INDEX, RAW_GOODS_INDEX
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
-from src.import_files import export_excel, get_excel_sheet_names
+from src.excel_file_functions import export_excel, get_excel_sheet_names, write_sheets_to_excel_file
 from src.interface.helper_functions import add_to_list, add_to_table
-from src.parsers.ac_import import AC_Import
 from PyQt6.QtCore import QThread, pyqtSignal
 import os
-from src.parsers.bc_import import BC_Import
-from src.parsers.cbp_import import CBP_Import
-from src.parsers.df_import import DF_Import
-from src.parsers.gg_import import GG_Import
-from src.parsers.hk_import import HK_Import
-from src.parsers.sg_import import SG_Import
+from src.parsers import EM_Import,AC_Import,BC_Import,CBP_Import,DF_Import,GG_Import,HK_Import,SG_Import
 
 class ImportThread(QThread):
     """
@@ -46,8 +40,9 @@ class ImportThread(QThread):
         self.completed_files = set()
 
         #Parsers available to be used
-        self.parsers = [AC_Import(),BC_Import(),GG_Import(),DF_Import(),SG_Import(),HK_Import(),CBP_Import()]
-        #self.parsers = [BC_Import(),AC_Import()]
+        self.parsers = {'ac' : AC_Import(),'bc' : BC_Import(),'gg' : GG_Import(), 'df' :DF_Import(),
+                        'sg' : SG_Import(), 'hk' : HK_Import(), 'cbp' : CBP_Import(), 'em' : EM_Import()}
+        #self.parsers = []
 
     def __del__(self):
         self.wait()
@@ -67,7 +62,8 @@ class ImportThread(QThread):
                 self.import_dir(filepath)
         else:
             #update changes the user made in the no category table
-            self.update_category_changes()
+            changes = self.update_category_changes()
+
 
             #TODO Update the static lists
 
@@ -80,6 +76,8 @@ class ImportThread(QThread):
             try:
                 #Export to excel
                 export_excel(resdf,'renset.xlsx')
+                if changes:
+                    self.update_category_file()
                 #Emit to main view to unlock the buttons
                 self._signal.emit(str(100))
             except PermissionError:
@@ -105,13 +103,16 @@ class ImportThread(QThread):
         except ValueError:
             #Just for csv file handling
             sheets = [None]
+        except FileNotFoundError:
+            self._signal.emit('No file selected')
+            return
         #TODO Add more error handling here
             
         #Find parser for file
         is_used = False
-        for sheet in sheets:
+        for j in range(len(sheets)):
             try:
-                (length,parser) = self.load_file(self.parsers,filepath,sheet)
+                (length,parser) = self.load_file(self.parsers,filepath,sheets[j])
             except FileNotFoundError:
                 self._signal.emit('File not found')
                 return
@@ -128,7 +129,9 @@ class ImportThread(QThread):
                     self.imported_lines = self.imported_lines + res
                     self.curadded += len(res)
                 #Update progress bar
-                prog = int(((i+1) / (length))*100)
+                prog_sheets = j/len(sheets)
+                prog_file = ((i+1)/length)/len(sheets)
+                prog = int((prog_sheets+prog_file)*100)
                 self._signal.emit(str(prog))
         if is_used:
             self.completed_files.add(filepath)
@@ -153,9 +156,9 @@ class ImportThread(QThread):
         #Get amount of files, using a number due to sending progress to progress bar
         num_files = len(files)
         for j in range(num_files):
+            filename = files[j].split('/')[-1]
             #Check if file is added already, if so skip to next file
-            if files[j] in self.completed_files:
-                self._signal.emit('Already imported %s' % files[j])
+            if filename in self.completed_files:
                 continue
             
             #Find parser for file
@@ -188,14 +191,13 @@ class ImportThread(QThread):
                     if res:
                         self.imported_lines = self.imported_lines + res
                         self.curadded += len(res)
-                self.completed_files.add(files[j])
+                self.completed_files.add(filename)
                 #Progress bar update
                 prog = int(((j+1) / (num_files))*100)
                 self._signal.emit(str(prog))
             if is_used:
-                add_to_list(self.import_list,files[j])
-            else:
-                self._signal.emit('No parser for file found')
+                add_to_list(self.import_list,filename)
+        self._signal.emit('Finished importing files')
 
     def update_category_changes(self):
         """
@@ -204,22 +206,36 @@ class ImportThread(QThread):
         """
         #Get amount of rows in the no category list
         amount_rows = self.nocat_list.rowCount()
-
+        is_changes = False
         for i in range(amount_rows):
             #Get category and raw_goods fields
             category = self.nocat_list.item(i,2).text()
             raw_goods = self.nocat_list.item(i,3).text()
-
+            id = self.nocat_list.item(i,0).text()
             #Check if they are changed
             if category != '' or raw_goods != '':
-                #Grab the ID of the item
-                index = self.nocat_list.item(i,0).text()
-                #
-                for val in self.nocat_indexes[index]:
+                is_changes = True
+                system_id = self.nocat_list.item(i,4).text()
+                #Update export Data
+                for val in self.nocat_indexes[system_id]:
                     row = self.imported_lines[val] 
-                    #3 and 5 is the indexes for cat and rawgoods
-                    row[3] = category
-                    row[5] = raw_goods
+                    row[CATEGORY_INDEX] = category
+                    row[RAW_GOODS_INDEX] = raw_goods
+                parser = self.get_parser_from_system_id(system_id)
+                if category != '':
+                    parser.update_category(id,category)
+                if raw_goods != '':
+                    parser.update_raw_goods(id,raw_goods)
+        return is_changes
+
+                
+                #Update parser dictionary values
+                    
+    def update_category_file(self):
+        all_category_sheets = dict()
+        for (name,parser) in self.parsers.items():
+            all_category_sheets[name] = parser.get_data_categories()
+        write_sheets_to_excel_file(CATEGORY_FILE_PATH,all_category_sheets)
 
     def parse_line(self,parser,index):
         """
@@ -239,18 +255,27 @@ class ImportThread(QThread):
             line = parser.parse_line(index,allow_nocat = True)
             #ID of the item is the last item of the row
             if line:
-                id = str(line[0][-1])
-                #If we already added an entry for an ID we dont create a new row but just add it to the index list
-                if id in self.nocat_indexes:
-                    self.nocat_indexes[id].append(self.curadded)
-                else:
-                    #Add the missing item as a row in the no categories table
-                    add_to_table(self.nocat_list,line[0])
-                    #Add ID to the index list so we know which line was added in the no category table
-                    self.nocat_indexes[id] = [self.curadded]
+                #Line is an array of arrays, where each sub array is an item. a line is the same item id however
+                for i in range(len(line)):
+                    #the fields we need from the parsed line to add to the table, set in constants instead
+                    id = str(line[i][-1])
+                    name = line[i][NAME_INDEX]
+                    category = line[i][CATEGORY_INDEX]
+                    raw_goods = line[i][RAW_GOODS_INDEX]
+                    #id for internal use, as we can get ids with same name from different parsers
+                    system_id = parser.__str__() + '_' + id
+                    index = self.curadded + i
+
+                    #If we already added an entry for an ID we dont create a new row but just add it to the index list
+                    if system_id in self.nocat_indexes:
+                        self.nocat_indexes[system_id].append(index)
+                    else:
+                        #Add the missing item as a row in the no categories table
+                        add_to_table(self.nocat_list,id,name,category,raw_goods,system_id)
+                        #Add ID to the index list so we know which line was added in the no category table
+                        self.nocat_indexes[system_id] = [index]
             return line
         except ValueError:
-            #print('test valueeror')
             return 
         except IndexError:
             return 
@@ -266,7 +291,7 @@ class ImportThread(QThread):
         throws:
             ParserError: If no parser is valid for the file
         """
-        for parser in parsers:
+        for (_,parser) in parsers.items():
             try:
                 length = parser.load_data(filepath,sheet)
                 return (length,parser)
@@ -302,3 +327,7 @@ class ImportThread(QThread):
             files = [file for file in files if not '~$' in file]
             files_to_import = files_to_import + files
         return files_to_import
+
+    def get_parser_from_system_id(self,system_id):
+        parser_name = system_id.split('_')[0]
+        return self.parsers[parser_name]
