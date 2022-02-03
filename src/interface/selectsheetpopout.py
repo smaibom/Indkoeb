@@ -1,5 +1,4 @@
-from src.parsers import AC_Import
+import re
 
-a = AC_Import()
-b = "test" + a.__str__()
-print(b)
+string = 'Frugtsalat m/druer , håndskåret i lage (3,2kg) - Økologsk'
+print(re.sub(' - Økologisk', '', string))

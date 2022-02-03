@@ -17,7 +17,8 @@ class HK_Import(Import_Class):
 
     def load_data(self,filename,sheet):
         try:
-            self.data = import_excel_sheet(filename,sheet)
+            self.data = import_excel_sheet(filename,sheet,skiprow=1)
+            print(self.data.loc[0])
             self.check_headers(self.data.loc[0])
             return len(self.data)
         except ValueError:

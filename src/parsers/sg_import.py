@@ -1,4 +1,5 @@
 from os import listdir
+import re
 import pandas as pd
 from src.constants import SG
 from src.errors import InvalidFileFormatError, NoCategoryError, ParserError
@@ -48,7 +49,7 @@ class SG_Import(Import_Class):
         id = line[1]
 
         conv_or_eco = self.get_type(line[0])
-        variant = " ".join(self.strip_sg_item_name(line[2]).split())
+        variant = self.strip_sg_item_name(line[2].strip())
         total_price = self.get_total_price(line)
         amount_kg = self.get_total_kg(line)
         price_per_kg = total_price/amount_kg
@@ -73,10 +74,21 @@ class SG_Import(Import_Class):
         return [row]
 
     def strip_sg_item_name(self,name):
-        if 'øko' in name.lower():
-            name = ''.join(name.split('-')[:-1])
-            return name.rstrip()
+        #Remove the eco part of the name
+        name = re.sub(' - Økologisk', '', name)
+        #remove double whitespace
+        name = " ".join(name.split())
         return name
+
+    def get_name(self,string):
+        prog = re.compile('([-\w ()æÆøØåÅ]+)(?: - Økologisk)')
+        try:
+            name = prog.match(string.strip())
+            return name.group(1)
+        except AttributeError:
+            print(string)
+            return string
+        
 
     """
     def import_data(self,filename):

@@ -27,10 +27,13 @@ class AC_Import(Import_Class):
         Names in files are listed as "ØKO item (country)" ØKO is optional
         """
         prog = re.compile('(?:ØKO )?([,+\.\wæÆøØåÅ /-]+).*')
-        new_name = prog.match(name)
-        #Removing double whitepsaces between words etc
-        new_name = new_name
-        return " ".join(new_name.group(1).split())
+        try:
+            new_name = prog.match(name)
+            #Removing double whitepsaces between words etc
+            new_name = " ".join(new_name.group(1).split())
+            return new_name
+        except AttributeError:
+            return name
 
     def get_origin_country(self,name):
         #Ignore everything to a ( match letts afterwards, in case a ( dosent exist it dosent have a country
