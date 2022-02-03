@@ -55,6 +55,9 @@ class ImportThread(QThread):
         filepath = self.fp.text()
         #Check if import was pressed
         if self.args['import']:
+            #Start progress bar
+            self._signal.emit('0')
+
             #Check if the user selected a file or a directory
             if self.args['load_file']:
                 self.import_file(filepath)
@@ -92,9 +95,8 @@ class ImportThread(QThread):
         args:
             filepath: Path to file
         """
-      
-
-        if filepath in self.completed_files:
+        filename = filepath.split('/')[-1]
+        if filename in self.completed_files:
             self._signal.emit('Already imported %s' % filepath)
             return
 
@@ -140,8 +142,8 @@ class ImportThread(QThread):
                     self._signal.emit(str(prog))
                 prev_status_prog = prog
         if is_used:
-            add_to_list(self.import_list,filepath)
-            self.completed_files.add(filepath)
+            add_to_list(self.import_list,filename)
+            self.completed_files.add(filename)
         else:
             self._signal.emit('No parser for file found')
 
