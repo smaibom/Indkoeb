@@ -62,10 +62,10 @@ class ImportThread(QThread):
                 self.import_dir(filepath)
         else:
             #update changes the user made in the no category table
+            if len(self.imported_lines) == 0:
+                self._signal.emit('No imported files')
+                return
             changes = self.update_category_changes()
-
-
-            #TODO Update the static lists
 
             #Remove the last entry in a row as it is just used for ID internally, if there is not more than 21 entries nothing is changed            
             for i in range(len(self.imported_lines)):
@@ -106,12 +106,13 @@ class ImportThread(QThread):
         except FileNotFoundError:
             self._signal.emit('No file selected')
             return
-        #TODO Add more error handling here
             
-        #Find parser for file
         is_used = False
+        #To throttle the status bar
+        prev_status_prog = 0
         for j in range(len(sheets)):
             try:
+                #Find parser for file
                 (length,parser) = self.load_file(self.parsers,filepath,sheets[j])
             except FileNotFoundError:
                 self._signal.emit('File not found')
@@ -120,6 +121,9 @@ class ImportThread(QThread):
                 self._signal.emit('Invalid file format')
                 return
             except ParserError:
+                #Make sure status bar updates if sheet is bad
+                prev_status_prog = int(((j+1)/len(sheets))*100)
+                self._signal.emit(str(prev_status_prog))
                 continue
             is_used = True
             #Iterate over file contents
@@ -128,12 +132,15 @@ class ImportThread(QThread):
                 if res:
                     self.imported_lines = self.imported_lines + res
                     self.curadded += len(res)
-                #Update progress bar
+                #Update progress bar, TODO: Throttle this a bit as sending every line lags the UI
                 prog_sheets = j/len(sheets)
                 prog_file = ((i+1)/length)/len(sheets)
                 prog = int((prog_sheets+prog_file)*100)
-                self._signal.emit(str(prog))
+                if prog > prev_status_prog:
+                    self._signal.emit(str(prog))
+                prev_status_prog = prog
         if is_used:
+            add_to_list(self.import_list,filepath)
             self.completed_files.add(filepath)
         else:
             self._signal.emit('No parser for file found')
@@ -191,11 +198,11 @@ class ImportThread(QThread):
                     if res:
                         self.imported_lines = self.imported_lines + res
                         self.curadded += len(res)
-                self.completed_files.add(filename)
                 #Progress bar update
                 prog = int(((j+1) / (num_files))*100)
                 self._signal.emit(str(prog))
             if is_used:
+                self.completed_files.add(filename)
                 add_to_list(self.import_list,filename)
         self._signal.emit('Finished importing files')
 

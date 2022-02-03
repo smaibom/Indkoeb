@@ -69,8 +69,12 @@ class CBP_Import(Import_Class):
     
     def get_name(self,name):
         #Taking a string with digits first and a optional øko and returning whats left after those things
-        prog = re.compile('\d+ ~(?: Øko)?(.+)') 
-        name = prog.match(name).group(1)
+        try:
+            #<digets> <~øko> <Rest>, we only care about res
+            prog = re.compile('\d+ ~(?: Øko)?(.+)') 
+            name = prog.match(name).group(1)
+        except AttributeError:
+            pass
         return name
 """
     def import_data(self,filename):

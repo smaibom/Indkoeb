@@ -86,7 +86,6 @@ class SG_Import(Import_Class):
             name = prog.match(string.strip())
             return name.group(1)
         except AttributeError:
-            print(string)
             return string
         
 

@@ -19,7 +19,10 @@ class AC_Import(Import_Class):
         """
         #Its always the first element of the filename
         prog = re.compile('(\d+) .+')
-        number = prog.match(filename).group(1)
+        try:
+            number = prog.match(filename).group(1)
+        except AttributeError:
+            number = 0
         return number
 
     def get_variant(self,name):
