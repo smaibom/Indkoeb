@@ -1,9 +1,12 @@
 /Specialisterne
-src/__pycache__/*
-src/interface/__pycache__
-src/parsers/__pycache__
+__pycache__/
 notused/*
 /venv/*
 /3.9venv/*
 *.xlsx
 *.csv
+imports
+noter
+Progress.txt
+res.txt
+src/import_all.py
