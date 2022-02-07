@@ -74,7 +74,7 @@ class AC_Import(Import_Class):
         year = self.get_year()
         quarter = self.get_quarter()
         source = self.get_source()
-        hospital = self.hospital
+        hospital = self.get_hospital(int(line[0]))
         #Name is in the 4th column
         name = line[3]
         conv_or_eco = self.get_type(name)

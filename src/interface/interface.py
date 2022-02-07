@@ -10,59 +10,6 @@ import PyQt6.QtCore as QtCore
 
 
 
-"""
-class App(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.title = 'Import app'
-        self.left = 10
-        self.top = 10
-        self.width = 1000
-        self.height = 600
-        self.parsers = {'ac' : AC_Import(AC)}
-        self.initUI()
-
-
-    def initUI(self):
-        self.create_import_widgets()
-        self.run_parser_button()
-        self.show()
-
-    def create_import_widgets(self):
-        def pick_directory(text_field):
-            dialog = QFileDialog()
-            dir = dialog.getExistingDirectory()
-            tf = text_field[0]
-            if dir != '':
-                text_field[0].setText(dir)
-
-        tfx = 0
-        tfy = 30
-        tftext = ''
-        readonly = True
-        tf = create_textfield(self,tfx,tfy,tftext,readonly)
-        tf.setMinimumWidth(250)
-
-        
-        bx = 100
-        by = 100
-        bname = 'pick dir' 
-        btn = create_button(self,100,100,'pick dir',pick_directory,[tf])
-
-
-    def run_parser_button(self):
-        def run_parser(parser,filedir):
-
-"""
-
-
-
-        
-
-
-
-
-
 
 class Example(QWidget):
     def __init__(self):
@@ -85,6 +32,7 @@ class Example(QWidget):
         self.thread_args = dict()
         self.thread_args['import'] = True
         self.thread_args['load_file'] =  True
+        self.thread_args['save_file_name'] = ''
 
         self.filepath = QLineEdit("Pick file or directory")
         self.filepath.setReadOnly(True)
@@ -145,10 +93,13 @@ class Example(QWidget):
         self.thread.start()
 
     def export_data(self):
-        self.thread_args['import'] = False
-        self.importbtn.setEnabled(False)
-        self.exportbtn.setEnabled(False)
-        self.thread.start()
+        (fp,_) = QFileDialog.getSaveFileName(self, 'Save File', filter = 'Excel Files(*.xlsx)')
+        if fp != '': 
+            self.thread_args['import'] = False
+            self.thread_args['save_file_name'] = fp
+            self.importbtn.setEnabled(False)
+            self.exportbtn.setEnabled(False)
+            self.thread.start()
 
 
     def signal_accept(self, msg):

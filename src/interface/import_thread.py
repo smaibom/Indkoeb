@@ -78,11 +78,12 @@ class ImportThread(QThread):
             resdf = pd.DataFrame(self.imported_lines,columns = COLUMN_NAMES)
             try:
                 #Export to excel
-                export_excel(resdf,'renset.xlsx')
+                fp = self.args['save_file_name']
+                export_excel(resdf,fp)
                 if changes:
                     self.update_category_file()
                 #Emit to main view to unlock the buttons
-                self._signal.emit(str(100))
+                self._signal.emit("Finished exporting file")
             except PermissionError:
                 #If file is open
                 self._signal.emit('File is open')

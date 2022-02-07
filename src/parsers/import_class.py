@@ -183,7 +183,11 @@ class Import_Class:
             ValueError is value is 0
         """
         index = self.static_vals['total_weight_index']
-        val = float(line[index])
+
+        val = line[index]
+        if pd.isna(val):
+            raise ValueError()
+        val = float(val)
         if val == 0:
             raise ValueError()
         return val
@@ -197,7 +201,10 @@ class Import_Class:
             ValueError is value is 0
         """
         index = self.static_vals['units_index']
-        val = float(line[index])
+        val = line[index]
+        if pd.isna(val):
+            raise ValueError()
+        val = float(val)
         if val == 0:
             raise ValueError()
         return val
@@ -209,7 +216,10 @@ class Import_Class:
             float value of the price per unit
         """
         index = self.static_vals['price_per_unit_index']
-        val = float(line[index])
+        val = line[index]
+        if pd.isna(val):
+            raise ValueError()
+        val = float(val)
         return val
     
     def get_total_price(self,line):
@@ -221,7 +231,10 @@ class Import_Class:
             ValueError is value is 0
         """
         index = self.static_vals['total_price_index']
-        val = float(line[index])
+        val = line[index]
+        if pd.isna(val):
+            raise ValueError()
+        val = float(val)
         if val == 0:
             raise ValueError()
         return val
